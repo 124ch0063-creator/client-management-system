@@ -1,37 +1,47 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { loginUser } from "../services/authService";
 
 function Login({ setIsLoggedIn }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
     
-    // Basic validation
+    // Frontend validation
     if (!email || !password) {
       setError("Please fill in all fields!");
+      setLoading(false);
       return;
     }
 
     if (!email.includes("@")) {
       setError("Please enter a valid email address!");
+      setLoading(false);
       return;
     }
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters long!");
+      setLoading(false);
       return;
     }
 
-    // Simple authentication (for demo purposes)
-    if (email === "admin@cms.com" && password === "admin123") {
+    // Call backend API
+    const result = await loginUser(email, password);
+    
+    if (result.success) {
       setIsLoggedIn(true);
       navigate("/dashboard");
     } else {
-      setError("Invalid email or password! Try: admin@cms.com / admin123");
+      setError(result.message || "Login failed. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -86,15 +96,29 @@ function Login({ setIsLoggedIn }) {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary">
-            Login
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
+        <div style={{ marginTop: "20px", textAlign: "center" }}>
+          <p style={{ color: "#666" }}>
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              style={{ color: "#667eea", textDecoration: "none", fontWeight: "600" }}
+            >
+              Register here
+            </Link>
+          </p>
+        </div>
+
         <div style={{ marginTop: "30px", padding: "20px", background: "#f0f0f0", borderRadius: "5px", fontSize: "14px", color: "#666" }}>
-          <p style={{ marginBottom: "10px", fontWeight: "600" }}>Demo Credentials:</p>
-          <p>Email: <code style={{ background: "white", padding: "2px 6px", borderRadius: "3px" }}>admin@cms.com</code></p>
-          <p>Password: <code style={{ background: "white", padding: "2px 6px", borderRadius: "3px" }}>admin123</code></p>
+          <p style={{ marginBottom: "10px", fontWeight: "600" }}>ℹ️ Backend Required:</p>
+          <p>Before logging in, ensure the backend server is running on:</p>
+          <code style={{ background: "white", padding: "8px", borderRadius: "3px", display: "block", marginTop: "5px" }}>
+            http://localhost:5000
+          </code>
         </div>
       </div>
     </div>
